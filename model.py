@@ -21,29 +21,33 @@ class ConvAndNorm(torch.nn.Module):
 
 
 class Policy(torch.nn.Module):
-    def __init__(self, board_sidelength=7):
+    def __init__(self, board_sidelength=7, hidden_size=64):
         super().__init__()
         self.board_sidelength = board_sidelength
+        self.hidden_size = hidden_size
         full_pad = int((board_sidelength - 1) // 2)
 
         self.base_conv1 = ConvAndNorm(
-            in_channels=3, out_channels=16, kernel_size=3, padding=1
+            in_channels=3, out_channels=hidden_size // 4, kernel_size=3, padding=1
         )
         self.base_conv2 = ConvAndNorm(
-            in_channels=16, out_channels=32, kernel_size=5, padding=2
+            in_channels=hidden_size // 4,
+            out_channels=hidden_size // 2,
+            kernel_size=5,
+            padding=2,
         )
         self.base_conv3 = ConvAndNorm(
-            in_channels=32,
-            out_channels=64,
+            in_channels=hidden_size // 2,
+            out_channels=hidden_size,
             kernel_size=board_sidelength,
             padding=full_pad,
         )
         self.fc_from = torch.nn.Linear(
-            in_features=64 * board_sidelength * board_sidelength,
+            in_features=hidden_size * board_sidelength * board_sidelength,
             out_features=board_sidelength * board_sidelength,
         )
         self.fc_to = torch.nn.Linear(
-            in_features=64 * board_sidelength * board_sidelength,
+            in_features=hidden_size * board_sidelength * board_sidelength,
             out_features=board_sidelength * board_sidelength,
         )
 
@@ -57,7 +61,9 @@ class Policy(torch.nn.Module):
         x = F.relu(self.base_conv1(x))
         x = F.relu(self.base_conv2(x))
         x = F.relu(self.base_conv3(x))
-        x = torch.reshape(x, (-1, 64 * self.board_sidelength * self.board_sidelength))
+        x = x.view(
+            (-1, self.hidden_size * self.board_sidelength * self.board_sidelength)
+        )
 
         # Seperate outputs for from and to
         # These Q values represent the estimated discounted reward for each action
