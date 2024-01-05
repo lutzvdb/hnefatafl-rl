@@ -27,23 +27,23 @@ class Policy(torch.nn.Module):
         full_pad = int((board_sidelength - 1) // 2)
 
         self.base_conv1 = ConvAndNorm(
-            in_channels=3, out_channels=32, kernel_size=3, padding=1
+            in_channels=3, out_channels=16, kernel_size=3, padding=1
         )
         self.base_conv2 = ConvAndNorm(
-            in_channels=32, out_channels=64, kernel_size=5, padding=2
+            in_channels=16, out_channels=32, kernel_size=5, padding=2
         )
         self.base_conv3 = ConvAndNorm(
-            in_channels=64,
-            out_channels=128,
+            in_channels=32,
+            out_channels=64,
             kernel_size=board_sidelength,
             padding=full_pad,
         )
         self.fc_from = torch.nn.Linear(
-            in_features=128 * board_sidelength * board_sidelength,
+            in_features=64 * board_sidelength * board_sidelength,
             out_features=board_sidelength * board_sidelength,
         )
         self.fc_to = torch.nn.Linear(
-            in_features=128 * board_sidelength * board_sidelength,
+            in_features=64 * board_sidelength * board_sidelength,
             out_features=board_sidelength * board_sidelength,
         )
 
@@ -57,7 +57,7 @@ class Policy(torch.nn.Module):
         x = F.relu(self.base_conv1(x))
         x = F.relu(self.base_conv2(x))
         x = F.relu(self.base_conv3(x))
-        x = torch.reshape(x, (-1, 128 * self.board_sidelength * self.board_sidelength))
+        x = torch.reshape(x, (-1, 64 * self.board_sidelength * self.board_sidelength))
 
         # Seperate outputs for from and to
         # These Q values represent the estimated discounted reward for each action
